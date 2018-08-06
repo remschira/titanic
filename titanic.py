@@ -14,35 +14,33 @@ from sklearn import preprocessing
 
 if __name__ == '__main__':
 
-    rng      = np.random.RandomState(42)
+    rng           = np.random.RandomState(42)
 
+    #read data
+    #we will split the train.csv data into training and testing data
+    path          = './data/'
+    fileName      = 'train.csv'
+    data          = pd.read_csv(path+fileName)    
+    features_list = [i for i in data]
 
-    path     = './data/'
-    fileName = 'train.csv'
-    data     = pd.read_csv(path+fileName) 
-    features = [i for i in data]
+    y             = ['Survived'] #dependent variable
 
-
-    y        = ['Survived']
     #drop some of the columns from features. Such as 'Survived' which is the dependent variable.
-    features = data.drop(['Survived','PassengerId','Ticket','Cabin'],axis=1)
+    features      = data.drop(['Survived','PassengerId','Ticket','Cabin'],axis=1)
 
-
-    #Make a new df that will contain the each person's title.
-    features_titles = pd.DataFrame(index=features.index,columns=['Title'])
+    #Make a new df that will contain each person's title.
+    titles        = pd.DataFrame(index=features.index,columns=['Title'])#empty at the moment
     
-
     #This loop is where the titles are determined
     j = 0
     for i in features['Name']:
         name = HumanName(i)
-        features_titles.loc[features.index[j]] = [name.title]
+        titles.loc[features.index[j]] = [name.title]
         j = j+1        
 
+        
     #Concatenate features and features_titles
-    features = pd.concat([features,features_titles],axis=1)
-
-
+    features = pd.concat([features,titles],axis=1)
 
 
 
@@ -61,6 +59,7 @@ if __name__ == '__main__':
     mrs    = ( (title == 'Mrs.') | (title == 'Lady.') |
                               (title == 'Mme.') | (title == 'the Countess. of') )
 
+    
     #Separate the 'Miss.' title into the young (who have siblings and/or parents) and
     #into old (who don't have siblings or parents)
     young      = (X_train['SibSp'] != 0) | (X_train['Parch'] !=0)
@@ -71,23 +70,26 @@ if __name__ == '__main__':
     #Find the median age for each Title category.
     age_master       = X_train.loc[master,'Age'].median()
     age_mr           = X_train.loc[mr,'Age'].median()
-    age_dr           = X_train.loc[dr,'Age'].median()    
+    age_dr           = X_train.loc[dr,'Age'].median()
+    #age_miss         = X_train.loc[miss,'Age'].median()
+    age_miss_old     = X_train.loc[miss_old,'Age'].median()        
     age_miss_young   = X_train.loc[miss_young,'Age'].median()
-    age_miss_old     = X_train.loc[miss_old,'Age'].median()    
     age_mrs          = X_train.loc[mrs,'Age'].median()    
 
 
     #Fill in NaN ages with the median age for the correct Title category
     X_train.loc[master,'Age']     = X_train.loc[master,'Age'].fillna(age_master)
     X_train.loc[mr,'Age']         = X_train.loc[mr,'Age'].fillna(age_mr)
-    X_train.loc[dr,'Age']         = X_train.loc[dr,'Age'].fillna(age_dr)    
+    X_train.loc[dr,'Age']         = X_train.loc[dr,'Age'].fillna(age_dr)
+    #X_train.loc[miss,'Age']       = X_train.loc[miss,'Age'].fillna(age_miss)
     X_train.loc[miss_old,'Age']   = X_train.loc[miss_old,'Age'].fillna(age_miss_old)
     X_train.loc[miss_young,'Age'] = X_train.loc[miss_young,'Age'].fillna(age_miss_young)    
     X_train.loc[mrs,'Age']        = X_train.loc[mrs,'Age'].fillna(age_mrs)            
-    
+
 
     #If have NaN for 'Embarked', replace NaN with the mode of the 'Embarked' column
     X_train['Embarked'].fillna(X_train['Embarked'].mode()[0],inplace=True) #fill nan values with mode    
+    #X_train['Age'].fillna(X_train['Age'].median(),inplace=True)
 
 
     
@@ -96,9 +98,7 @@ if __name__ == '__main__':
     title  = X_test['Title']
     master = (title == 'Master.')
     mr     = (title == 'Mr.')
-
     dr     = (title == 'Dr.') 
-
     miss   = ( (title == 'Miss.') | (title == 'Ms.') |
                               (title == 'Mlle.') )
     mrs    = ( (title == 'Mrs.') | (title == 'Lady.') |
@@ -112,6 +112,7 @@ if __name__ == '__main__':
     age_master       = X_test.loc[master,'Age'].median()
     age_mr           = X_test.loc[mr,'Age'].median()
     age_dr           = X_test.loc[dr,'Age'].median()
+    #age_miss         = X_test.loc[miss,'Age'].median()    
     age_miss_young   = X_test.loc[miss_young,'Age'].median()
     age_miss_old     = X_test.loc[miss_old,'Age'].median()    
     age_mrs          = X_test.loc[mrs,'Age'].median()    
@@ -120,24 +121,23 @@ if __name__ == '__main__':
 
     X_test.loc[master,'Age']     = X_test.loc[master,'Age'].fillna(age_master)
     X_test.loc[mr,'Age']         = X_test.loc[mr,'Age'].fillna(age_mr)
-    X_test.loc[dr,'Age']         = X_test.loc[dr,'Age'].fillna(age_dr)    
+    X_test.loc[dr,'Age']         = X_test.loc[dr,'Age'].fillna(age_dr)
+    #X_test.loc[miss,'Age']       = X_test.loc[miss,'Age'].fillna(age_miss)    
     X_test.loc[miss_old,'Age']   = X_test.loc[miss_old,'Age'].fillna(age_miss_old)
     X_test.loc[miss_young,'Age'] = X_test.loc[miss_young,'Age'].fillna(age_miss_young)        
     X_test.loc[mrs,'Age']        = X_test.loc[mrs,'Age'].fillna(age_mrs)            
-    
+
 
     X_test['Embarked'].fillna(X_test['Embarked'].mode()[0],inplace=True) #fill nan values with mode    
-
-
+    #X_test['Age'].fillna(X_test['Age'].median(),inplace=True)
 
     #transform categorical to numeric values
     #Use the train encoding for the test data
-    le=LabelEncoder()
+    le = LabelEncoder()
     if X_train['Sex'].dtype=='object':
         le.fit(X_train['Sex'].values)
         X_train['Sex'] = le.transform(X_train['Sex'])
-        X_test['Sex']  = le.transform(X_test['Sex'])
-
+        X_test['Sex']  = le.transform(X_test['Sex'])        
 
     if X_train['Embarked'].dtype=='object':
         le.fit(X_train['Embarked'].values)
@@ -145,27 +145,25 @@ if __name__ == '__main__':
         X_test['Embarked']  = le.transform(X_test['Embarked'])
 
 
-
     #remove some columns
     X_train = X_train.drop(['Name','Title'],axis=1)
     X_test  = X_test.drop(['Name','Title'],axis=1)            
 
-    #scale data
-    scaler              = preprocessing.StandardScaler()
-    scaler.fit(X_train)
-    X_train_scaled      = scaler.transform(X_train) #this converts pandas dataframe to numpy
-    X_test_scaled       = scaler.transform(X_test)
+    ##scale data
+    #scaler              = preprocessing.StandardScaler()
+    #scaler.fit(X_train)
+    #X_train_scaled      = scaler.transform(X_train) #this converts pandas dataframe to numpy
+    #X_test_scaled       = scaler.transform(X_test)
+    #X_train = pd.DataFrame(X_train, index=X_train.index, columns=X_train.columns)
+    #X_test  = pd.DataFrame(X_test, index=X_test.index, columns=X_test.columns)    
 
-    X_train = pd.DataFrame(X_train, index=X_train.index, columns=X_train.columns)
-    X_test  = pd.DataFrame(X_test, index=X_test.index, columns=X_test.columns)    
-    
-    
-    c,r             = y_train.shape 
+
+    c,r             = y_train.shape
     y_train_reshape = y_train.values.reshape(c,) 
 
-
-    clf_gbm = GradientBoostingClassifier(n_estimators=350,max_depth=2,learning_rate=0.01,
-                                         min_samples_split=5,min_samples_leaf=1)    
+    #find predictions for X_test with Gradient Boosting
+    clf_gbm = GradientBoostingClassifier(n_estimators=350,max_depth=3,learning_rate=0.01,
+                                         min_samples_split=4,min_samples_leaf=1)
     clf_gbm.fit(X_train,y_train_reshape)
     pred_gbm = clf_gbm.predict(X_test)
 
@@ -181,23 +179,18 @@ if __name__ == '__main__':
 
 
 
+
     
 
-    file = open('./output/classifier_performance_new.dat','w')
+    file = open('./output/classifier_performance_aug.dat','w')
 
 
     file.write( '\n::::::gradient boosting::::::\n')
-    lam = [1,2,3,5,6,10,15,20,30,50,100]
-    lam = [1,2,3,4,5]
-    #random forest
-    #n_estimators = 300 best, acc=.669,trace=353
-    #default max_depth is best
+    lam = [1,2,3,4,5,6,10,15,20,30,50,100]
 
     #gradient boosting
-    #n_estimators = 300 best, acc=.652,trace=344
-    #default max_depth is best
     for l in lam:
-        clf_gbm = GradientBoostingClassifier(n_estimators=350,max_depth=l,learning_rate=0.1,
+        clf_gbm = GradientBoostingClassifier(n_estimators=350,max_depth=l,learning_rate=0.01,
                                              min_samples_split=5,min_samples_leaf=1)    
         clf_gbm.fit(X_train,y_train_reshape)
         pred_gbm = clf_gbm.predict(X_test)
@@ -206,8 +199,6 @@ if __name__ == '__main__':
         file.write('confusion m. trace = %d \n' % np.trace(confusion_matrix(y_test,pred_gbm) ) )
         file.write('cross val score = %f \n' %
                    np.average(cross_val_score(clf_gbm,X_train,y_train_reshape,cv=5, scoring='accuracy'))) 
-
-
     
     file.write( '::::::logistic regression::::::\n')        
     lam = [0.001,0.01,0.1,1.,10.,100.,1000.]
@@ -263,28 +254,7 @@ if __name__ == '__main__':
         file.write('\naccuracy = %f \n' % accuracy_score(y_test,pred_ada))
         file.write('confusion m. trace = %d \n' % np.trace(confusion_matrix(y_test,pred_ada) ) )
         file.write('cross val score = %f \n' %
-                   np.average(cross_val_score(clf_ada,X_train,y_train_reshape,cv=5, scoring='accuracy'))) 
-    
-
-    file.write( '\n::::::gradient boosting::::::\n')
-    lam = [1,2,3,5,6,10,15,20,30,50,100]
-    #random forest
-    #n_estimators = 300 best, acc=.669,trace=353
-    #default max_depth is best
-
-    #gradient boosting
-    #n_estimators = 300 best, acc=.652,trace=344
-    #default max_depth is best
-    for l in lam:
-        clf_gbm = GradientBoostingClassifier(n_estimators=300,max_depth=l)    
-        clf_gbm.fit(X_train,y_train_reshape)
-        pred_gbm = clf_gbm.predict(X_test)
-        file.write( '\n \n::: with max_depth = %d :::::: \n\n' %l )        
-        file.write('\naccuracy = %f \n' % accuracy_score(y_test,pred_gbm))
-        file.write('confusion m. trace = %d \n' % np.trace(confusion_matrix(y_test,pred_gbm) ) )
-        file.write('cross val score = %f \n' %
-                   np.average(cross_val_score(clf_gbm,X_train,y_train_reshape,cv=5, scoring='accuracy'))) 
-
+                   np.average(cross_val_score(clf_ada,X_train,y_train_reshape,cv=5, scoring='accuracy')))     
 
     file.write( '\n::::::Linear SVM::::::\n')
     lam = [0.001,0.01,0.02,0.04,0.06,0.08,0.10,1.0,5.0]    
